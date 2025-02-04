@@ -1,6 +1,7 @@
-import { StyledEngineProvider } from '@mui/material'
+import { Stack, StyledEngineProvider } from '@mui/material'
 import React from 'react'
 import Header from './Header'
+import Body from './Body'
 
 export default function MainWindow() 
 {
@@ -14,9 +15,10 @@ export default function MainWindow()
 
   return (
     <StyledEngineProvider injectFirst = {true}>
-      <div style = {mainWindowStyle}> 
+      <Stack direction = {'column'} spacing = {2} sx = {mainWindowStyle}> 
         <Header/>
-      </div>
+        <Body/>
+      </Stack>
     </StyledEngineProvider>
   )
 }
