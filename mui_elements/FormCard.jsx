@@ -1,5 +1,5 @@
 import { InputAdornment, Grid2, Stack, TextField, Button, } from '@mui/material'
-import React, { useEffect, useState } from 'react'
+import React, { useContext, useEffect, useState } from 'react'
 import { SmallInputSelect, DropdownMenu } from './InputFields'
 import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
 import PersonIcon from '@mui/icons-material/Person';
@@ -10,6 +10,9 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import FmdGoodOutlinedIcon from '@mui/icons-material/FmdGoodOutlined';
 import CircleOutlinedIcon from '@mui/icons-material/CircleOutlined';
 import SearchIcon from '@mui/icons-material/Search';
+import { mainContext } from '../components/MainWindow';
+
+import axios from 'axios'
 
 const tripTypes = 
 [
@@ -34,16 +37,6 @@ const persons =
   'Infants (On lap)'      
 ]
 
-
-const url = 'https://sky-scrapper.p.rapidapi.com/api/v1/flights/getNearByAirports?lat=19.242218017578125&lng=72.85846156046128&locale=en-US';
-const options = {
-	method: 'GET',
-	headers: {
-		'x-rapidapi-key': 'f06d9f238fmshc14231bca729243p115a04jsn7e7634f301a1',
-		'x-rapidapi-host': 'sky-scrapper.p.rapidapi.com'
-	}
-};
-
 export default function FormCard() 
 {
   const [tripType, setTripType]         = useState(tripTypes[0]);
@@ -55,29 +48,113 @@ export default function FormCard()
     infantsOnLap: 0
   })
   const [flightType, setFlightType]     = useState(flightTypes[0]);
-  const [nearBy,   setNearBy]           = useState([]);
   const [date, setDate]                 = useState(dayjs());
   const [countryFrom, setCountryFrom]   = useState("Where From?");
   const [countryTo, setcountryTo]       = useState("Where To?");
 
-  const fetchData = async () => 
+  const context = useContext(mainContext);
+
+  const findAirport = (ogObj, distObj) => 
+  {   
+    return new Promise((resolve, reject) => 
+    {
+      const airPortsInfo = 
+      {
+        originSkyId: '',
+        destinationSkyId: '',
+        originEntityId: '',
+        destinationEntityId: '',
+        currency: ogObj.currency,
+        market: ogObj.market,
+        countryCode: ogObj.countryCode
+      }
+      axios.request(
+      {
+        method: 'GET',
+        url: 'https://sky-scrapper.p.rapidapi.com/api/v1/flights/searchAirport',
+        params: {
+          query: 'new',
+          locale: ogObj.market
+        },
+        headers: {
+          'x-rapidapi-key': 'f06d9f238fmshc14231bca729243p115a04jsn7e7634f301a1',
+          'x-rapidapi-host': 'sky-scrapper.p.rapidapi.com'
+        }
+      })
+      .then((response) => 
+      {
+        if(response.data.status)
+        {
+          const data = response.data.data[0]
+          airPortsInfo.originSkyId    = data.skyId;
+          airPortsInfo.originEntityId = data.entityId;
+        }
+        return axios.request(
+        {
+          method: 'GET',
+          url: 'https://sky-scrapper.p.rapidapi.com/api/v1/flights/searchAirport',
+          params: {
+            query: 'new',
+            locale: distObj.market
+          },
+          headers: {
+            'x-rapidapi-key': 'f06d9f238fmshc14231bca729243p115a04jsn7e7634f301a1',
+            'x-rapidapi-host': 'sky-scrapper.p.rapidapi.com'
+          }
+        })
+      })
+      .then((response) => 
+      {
+        if(response.data.status)
+        {
+          const data = response.data.data[0]
+          airPortsInfo.destinationSkyId    = data.skyId;
+          airPortsInfo.destinationEntityId = data.entityId;
+        }
+      })
+      .catch((err) => {console.log(err)})
+      .finally(() => 
+      {
+        console.log(airPortsInfo)
+        getFlights(airPortsInfo);
+      })
+    })
+  }
+
+  const getFlights = async (airPortsInfo) =>
   {
-    try {
-      const response = await fetch(url, options);
-      const result = await response.json();
-      console.log(result);
-      setNearBy(result.data.nearby);
-    } catch (error) {
+    const flightOptions = {
+      method: 'GET',
+      url: 'https://sky-scrapper.p.rapidapi.com/api/v1/flights/searchFlights',
+      params: {
+        originSkyId: airPortsInfo.originSkyId,
+        destinationSkyId: airPortsInfo.destinationSkyId,
+        originEntityId: airPortsInfo.originEntityId,
+        destinationEntityId: airPortsInfo.destinationEntityId,
+        date: date,
+        cabinClass: flightType.toLowerCase(),
+        adults: personsCount.adults || 1,
+        sortBy: 'Best',
+        currency: airPortsInfo.currency,
+        market: airPortsInfo.market,
+        countryCode: airPortsInfo.countryCode
+      },
+      headers: {
+        'x-rapidapi-key': 'f06d9f238fmshc14231bca729243p115a04jsn7e7634f301a1',
+        'x-rapidapi-host': 'sky-scrapper.p.rapidapi.com'
+      }
+    };
+    
+    try 
+    {
+      const response = await axios.request(flightOptions);
+      console.log(response.data)
+    } 
+    catch(error) 
+    {
       console.error(error);
     }
   }
-
-  useEffect(() => 
-  {
-    fetchData();
-
-    return () => {}
-  }, []);
 
   function handleTripTypeChange(event)
   {
@@ -87,6 +164,16 @@ export default function FormCard()
   function handleFlightTypeChange(event)
   {
     setFlightType(event.target.value)
+  }
+
+  function handleExploreClick()
+  {
+    const ogCountryObj = context.state.find(obj => obj.country  === countryFrom);
+    const distCountryObj = context.state.find(obj => obj.country  === countryTo);
+    if(ogCountryObj && distCountryObj)
+    {
+      findAirport(ogCountryObj, distCountryObj);
+    }
   }
 
   return (
@@ -186,7 +273,9 @@ export default function FormCard()
             top: '72%',
             borderRadius: '15px'
           }}
-          startIcon = {<SearchIcon/>}>
+          startIcon = {<SearchIcon/>}
+          onClick   = {handleExploreClick}
+          >
           Explore
         </Button>
     </Stack>
