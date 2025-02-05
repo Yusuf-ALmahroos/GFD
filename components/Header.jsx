@@ -6,7 +6,7 @@ const imageStyling =
 {
   width: '100%',
   height: '50vh',
-  objectFit: 'cover'
+  objectFit: 'cover',
 }
 
 export default function Header() 

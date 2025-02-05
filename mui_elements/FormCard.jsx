@@ -1,4 +1,4 @@
-import { InputAdornment, Grid2, Stack, TextField, Button, } from '@mui/material'
+import { InputAdornment, Grid2, Stack, TextField, Button, useMediaQuery } from '@mui/material'
 import React, { useContext, useEffect, useState } from 'react'
 import { SmallInputSelect, DropdownMenu } from './InputFields'
 import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
@@ -52,72 +52,71 @@ export default function FormCard()
   const [countryFrom, setCountryFrom]   = useState("Where From?");
   const [countryTo, setcountryTo]       = useState("Where To?");
 
+  const isSmallScreen = useMediaQuery("(max-width:675px)")
+
   const context = useContext(mainContext);
 
   const findAirport = (ogObj, distObj) => 
   {   
-    return new Promise((resolve, reject) => 
+    const airPortsInfo = 
     {
-      const airPortsInfo = 
-      {
-        originSkyId: '',
-        destinationSkyId: '',
-        originEntityId: '',
-        destinationEntityId: '',
-        currency: ogObj.currency,
-        market: ogObj.market,
-        countryCode: ogObj.countryCode
+      originSkyId: '',
+      destinationSkyId: '',
+      originEntityId: '',
+      destinationEntityId: '',
+      currency: ogObj.currency,
+      market: ogObj.market,
+      countryCode: ogObj.countryCode
+    }
+    axios.request(
+    {
+      method: 'GET',
+      url: 'https://sky-scrapper.p.rapidapi.com/api/v1/flights/searchAirport',
+      params: {
+        query: 'new',
+        locale: ogObj.market
+      },
+      headers: {
+        'x-rapidapi-key': 'f06d9f238fmshc14231bca729243p115a04jsn7e7634f301a1',
+        'x-rapidapi-host': 'sky-scrapper.p.rapidapi.com'
       }
-      axios.request(
+    })
+    .then((response) => 
+    {
+      if(response.data.status)
+      {
+        const data = response.data.data[0]
+        airPortsInfo.originSkyId    = data.skyId;
+        airPortsInfo.originEntityId = data.entityId;
+      }
+      return axios.request(
       {
         method: 'GET',
         url: 'https://sky-scrapper.p.rapidapi.com/api/v1/flights/searchAirport',
         params: {
           query: 'new',
-          locale: ogObj.market
+          locale: distObj.market
         },
         headers: {
           'x-rapidapi-key': 'f06d9f238fmshc14231bca729243p115a04jsn7e7634f301a1',
           'x-rapidapi-host': 'sky-scrapper.p.rapidapi.com'
         }
       })
-      .then((response) => 
+    })
+    .then((response) => 
+    {
+      if(response.data.status)
       {
-        if(response.data.status)
-        {
-          const data = response.data.data[0]
-          airPortsInfo.originSkyId    = data.skyId;
-          airPortsInfo.originEntityId = data.entityId;
-        }
-        return axios.request(
-        {
-          method: 'GET',
-          url: 'https://sky-scrapper.p.rapidapi.com/api/v1/flights/searchAirport',
-          params: {
-            query: 'new',
-            locale: distObj.market
-          },
-          headers: {
-            'x-rapidapi-key': 'f06d9f238fmshc14231bca729243p115a04jsn7e7634f301a1',
-            'x-rapidapi-host': 'sky-scrapper.p.rapidapi.com'
-          }
-        })
-      })
-      .then((response) => 
-      {
-        if(response.data.status)
-        {
-          const data = response.data.data[0]
-          airPortsInfo.destinationSkyId    = data.skyId;
-          airPortsInfo.destinationEntityId = data.entityId;
-        }
-      })
-      .catch((err) => {console.log(err)})
-      .finally(() => 
-      {
-        console.log(airPortsInfo)
-        getFlights(airPortsInfo);
-      })
+        const data = response.data.data[0]
+        airPortsInfo.destinationSkyId    = data.skyId;
+        airPortsInfo.destinationEntityId = data.entityId;
+      }
+    })
+    .catch((err) => {console.log(err)})
+    .finally(() => 
+    {
+      console.log(airPortsInfo)
+      getFlights(airPortsInfo);
     })
   }
 
@@ -181,10 +180,11 @@ export default function FormCard()
       {
         width: 'calc(100% - 120px)',
         background: 'white',
-        boxShadow: "4px 4px 10px rgba(0, 0, 0, 0.3), -4px 4px 10px rgba(0, 0, 0, 0.3), 0px 6px 12px rgba(0, 0, 0, 0.4)",
+        boxShadow: "4px 4px 10px rgba(0, 0, 0, 0.1), -4px 4px 10px rgba(0, 0, 0, 0.1), 0px 6px 12px rgba(0, 0, 0, 0.2)",
         paddingX: '30px',
         paddingY: '15px',
-        position: 'relative'
+        position: 'relative',
+        borderRadius: '15px',
       }}  
       direction = {'column'} 
       spacing   = {4}
@@ -268,8 +268,8 @@ export default function FormCard()
           sx = 
           {{
             position: 'absolute',
-            right: '43%',
-            left: '43%',
+            right: (isSmallScreen ? '37%' : '43%'),
+            left: (isSmallScreen ? '37%' : '43%'),
             top: '72%',
             borderRadius: '15px'
           }}

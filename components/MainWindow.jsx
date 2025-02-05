@@ -4,6 +4,7 @@ import Header from './Header'
 import Body from './Body'
 
 import axios from 'axios'
+import Footer from './Footer'
 
 export const mainContext = createContext();
 
@@ -52,7 +53,6 @@ export default function MainWindow()
     width: '100%',
     maxWidth: "1000px",
     margin: "0 auto",
-    border: "solid 2px black"
   }
 
   return (
@@ -60,6 +60,7 @@ export default function MainWindow()
       <Stack direction = {'column'} spacing = {2} sx = {mainWindowStyle}> 
         <Header/>
         <Body/>
+        <Footer/>
       </Stack>
     </mainContext.Provider>
   )
