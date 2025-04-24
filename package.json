@@ -2,9 +2,12 @@
   "name": "gfd",
   "version": "1.0.0",
   "main": "index.js",
+  "homepage": "https://Yusuf-ALmahroos.github.io/GFD/",
   "scripts": {
     "start": "webpack serve --mode development",
-    "build": "webpack --mode production"
+    "build": "webpack --mode production",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d dist"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
@@ -22,6 +25,7 @@
     "@babel/preset-env": "^7.26.7",
     "@babel/preset-react": "^7.26.3",
     "babel-loader": "^9.2.1",
+    "gh-pages": "^6.3.0",
     "html-webpack-plugin": "^5.6.3",
     "webpack": "^5.97.1",
     "webpack-cli": "^6.0.1",
